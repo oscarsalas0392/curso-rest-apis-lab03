@@ -9,7 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+//using System.Data.SqlClient;
 
 namespace Dotnet_Backend
 {
@@ -48,6 +49,12 @@ namespace Dotnet_Backend
 
             // dotnet add package Swashbuckle.AspNetCore
             services.AddSwaggerGen();
+
+            services.AddDbContext<AdventureWorksDbContext>(
+            options =>
+                options.UseSqlServer(Configuration.GetConnectionString("AdventureWorks")));
+
+            services.AddScoped<AdventureWorksDbContext>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -81,21 +88,32 @@ namespace Dotnet_Backend
                     return Task.CompletedTask;
                 });
 
-                endpoints.MapGet("db/hello", async context => {
+                //endpoints.MapGet("db/hello", async context => {
 
-                    var adventureWorks = "data source=localhost,1434;initial catalog=Adventureworks;persist security info=True;user id=sa;password=Password.123;MultipleActiveResultSets=True;";
+                //    var adventureWorks = "data source=localhost,1434;initial catalog=Adventureworks;persist security info=True;user id=sa;password=Password.123;MultipleActiveResultSets=True;";
 
-                    using (var connection = new SqlConnection(adventureWorks))
+                //    using (var connection = new SqlConnection(adventureWorks))
+                //    {
+                //        SqlCommand command = new SqlCommand("EXEC [dbo].[sp_HelloWorld]", connection);
+                //        command.Connection.Open();
+                //        var helloDb = command.ExecuteScalar() as string;
+
+                //        context.Response.StatusCode = 200;
+
+                //        await context.Response.WriteAsync(helloDb);
+                //    }
+                //});
+
+                endpoints.MapGet("/api/products", async context => {
+
+                    using (var db = new AdventureWorksDbContext())
                     {
-                        SqlCommand command = new SqlCommand("EXEC [dbo].[sp_HelloWorld]", connection);
-                        command.Connection.Open();
-                        var helloDb = command.ExecuteScalar() as string;
-
-                        context.Response.StatusCode = 200;
-
-                        await context.Response.WriteAsync(helloDb);
+                        await context.Response.WriteAsJsonAsync(db.Products.ToList());
                     }
+
                 });
+
+
             });
 
         }
